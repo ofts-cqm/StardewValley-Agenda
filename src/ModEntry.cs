@@ -4,22 +4,32 @@ using StardewModdingAPI.Events;
 using StardewModdingAPI.Utilities;
 using StardewValley;
 using StardewValley.Menus;
+using GenericModConfigMenu;
 
 namespace MyAgenda
 {
     internal sealed class ModEntry : Mod
     {
         ModConfig Config;
+        //NamingMenu n;
 
         public override void Entry(IModHelper helper)
         {
-            this.Config = this.Helper.ReadConfig<ModConfig>();
+            Config = this.Helper.ReadConfig<ModConfig>();
+            if (Config == null)
+            {
+                Config = new ModConfig();
+                Monitor.Log("Config is missing, generating new one");
+            }
+
             Helper.Events.Input.ButtonPressed += this.OnButtonPressed;
             Helper.Events.Display.MenuChanged += this.OnUIUpdated;
             Helper.Events.Display.WindowResized += this.onWindowResized;
             Helper.Events.GameLoop.Saving += this.onSaveSaved;
             Helper.Events.GameLoop.SaveLoaded += this.onSaveLoaded;
             Helper.Events.GameLoop.DayStarted += this.dailyCheck;
+            Helper.Events.GameLoop.DayEnding += this.dayEnd;
+            Helper.Events.GameLoop.GameLaunched += OnGameLaunched;
             Helper.ConsoleCommands.Add("agenda", "check the items on agenda at the specified date\nUsage: agenda [season(0-3)] [date(0-27)]", query);
 
             Agenda.monitor = this.Monitor;
@@ -73,6 +83,55 @@ namespace MyAgenda
             }
         }
 
+        private void dayEnd(object sender, DayEndingEventArgs e)
+        {
+            if (Config.Auto_Delete_After_Complete)
+            {
+                int season = Utility.getSeasonNumber(Game1.currentSeason);
+                int day = Game1.dayOfMonth - 1;
+                Agenda.pageNote[season, day] = "";
+                Agenda.pageTitle[season, day] = "";
+            }
+        }
+
+        private void OnGameLaunched(object sender, GameLaunchedEventArgs e)
+        {
+
+            var configMenu = this.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
+            if (configMenu is null)
+                return;
+
+            configMenu.Register(
+                mod: this.ModManifest,
+                reset: () => Config = new ModConfig(),
+                save: () => this.Helper.WriteConfig(this.Config)
+            );
+
+            configMenu.AddKeybindList(
+                mod : this.ModManifest,
+                name: () => Helper.Translation.Get("keyBind"),
+                tooltip : () => Helper.Translation.Get("keyBind_tip"),
+                getValue: () => this.Config.AgendaKey,
+                setValue: value => this.Config.AgendaKey = value
+            );
+
+            configMenu.AddBoolOption(
+                mod: this.ModManifest,
+                name: () => Helper.Translation.Get("replace"),
+                tooltip: () => Helper.Translation.Get("replace_tip"),
+                getValue: () => this.Config.Replace_Calender_With_Agenda,
+                setValue: value => this.Config.Replace_Calender_With_Agenda = value
+            );
+
+            configMenu.AddBoolOption(
+                mod: this.ModManifest,
+                name: () => Helper.Translation.Get("autoDelete"),
+                tooltip: () => Helper.Translation.Get("autoDelete_tip"),
+                getValue: () => this.Config.Auto_Delete_After_Complete,
+                setValue: value => this.Config.Auto_Delete_After_Complete = value
+            );
+        }
+
         private void query(string commend, string[] args)
         {
             if (!Context.IsWorldReady)
@@ -96,5 +155,6 @@ namespace MyAgenda
     {
         public KeybindList AgendaKey { get; set; } = KeybindList.Parse("G");
         public bool Replace_Calender_With_Agenda { get; set; } = false;
+        public bool Auto_Delete_After_Complete { get; set; } = true;
     }
 }

@@ -10,7 +10,7 @@ namespace MyAgenda
     public class AgendaPage : IClickableMenu
     {
         public string festival, birthday, title, subsituteTitle, note;
-        public int season, day, selected;
+        public int season, day, selected, ticks = 0;
         public static Texture2D pageTexture;
         public static Rectangle[] bounds = new Rectangle[4];
         public static IMonitor monitor;
@@ -25,6 +25,7 @@ namespace MyAgenda
             tbox.Y = 100000000;
             tbox.Width = 114514;
             tbox.Height = 114514;
+            tbox.OnEnterPressed += textBoxEnter;
             resize();
             AgendaPage.helper = helper;
         }
@@ -91,6 +92,8 @@ namespace MyAgenda
 
         public override void draw(SpriteBatch b)
         {
+            ticks++;
+            ticks %= 60;
             if(selected == 1)
             {
                 title = tbox.Text;
@@ -103,10 +106,28 @@ namespace MyAgenda
             b.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.75f);
             b.Draw(pageTexture, new Vector2(xPositionOnScreen, yPositionOnScreen), new Rectangle(0, 0, 200, 238), Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 1f);
 
+            if (selected == 1 && ticks >= 30)
+            {
+                Agenda.drawStr(b, getSuitableTitle() + "|", bounds[0], Game1.dialogueFont);
+            }
+            else
+            {
+                Agenda.drawStr(b, getSuitableTitle(), bounds[0], Game1.dialogueFont);
+            }
+
             Agenda.drawStr(b, getSuitableTitle(), bounds[0], Game1.dialogueFont);
             Agenda.drawStr(b, helper.Translation.Get("festival") + (festival == "" ? helper.Translation.Get("none") : festival), bounds[1], Game1.dialogueFont);
             Agenda.drawStr(b, helper.Translation.Get("birthday_page") + (birthday == "" ? helper.Translation.Get("none") : birthday), bounds[2], Game1.dialogueFont);
-            Agenda.drawStr(b, note, bounds[3], Game1.dialogueFont);
+            
+            if(selected == 2 && ticks >= 30)
+            {
+                Agenda.drawStr(b, note + "|", bounds[3], Game1.smallFont);
+            }
+            else
+            {
+                Agenda.drawStr(b, note, bounds[3], Game1.smallFont);
+            }
+            
 
             base.draw(b);
             tbox.Draw(b);
@@ -134,6 +155,11 @@ namespace MyAgenda
             }
 
             return helper.Translation.Get("subsitute");
+        }
+
+        public void textBoxEnter(TextBox sender)
+        {
+            sender.Text += "\n";
         }
     }
 }

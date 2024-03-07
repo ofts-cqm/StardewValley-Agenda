@@ -17,6 +17,7 @@ namespace MyAgenda
         public static string[,] pageTitle, pageBirthday, pageFestival, pageNote, titleSubsitute;
         public static int season;
         public static Rectangle[] bounds;
+        public static Rectangle hoverBounds;
         public static IMonitor monitor;
         public static IModHelper helper;
         public static string hoverText = "";
@@ -75,12 +76,13 @@ namespace MyAgenda
             xPositionOnScreen = (int)topLeftPositionForCenteringOnScreen.X;
             yPositionOnScreen = (int)topLeftPositionForCenteringOnScreen.Y;
             upperRightCloseButton = new ClickableTextureComponent(new Rectangle(xPositionOnScreen + width - 20, yPositionOnScreen, 48, 48), Game1.mouseCursors, new Rectangle(337, 494, 12, 12), 4f);
-            prev = new ClickableTextureComponent(new Rectangle(xPositionOnScreen + 875, yPositionOnScreen + 50, 48 * 4, 24 * 4), buttonTexture, new Rectangle(0, 24, 48, 24), 2f);
-            next = new ClickableTextureComponent(new Rectangle(xPositionOnScreen + 971, yPositionOnScreen + 50, 48 * 4, 24 * 4), buttonTexture, new Rectangle(0, 0, 48, 24), 2f);
-            hover = new ClickableTextureComponent(new Rectangle(-200, -100, 48 * 4, 24 * 4), buttonTexture, new Rectangle(0, 48, 48, 24), 2f);
+            prev = new ClickableTextureComponent(new Rectangle(xPositionOnScreen + 875, yPositionOnScreen + 50, 96, 48), buttonTexture, new Rectangle(0, 24, 48, 24), 2f);
+            next = new ClickableTextureComponent(new Rectangle(xPositionOnScreen + 971, yPositionOnScreen + 50, 96, 48), buttonTexture, new Rectangle(0, 0, 48, 24), 2f);
+            hoverBounds = new Rectangle(-200, -100, 48 * 4, 24 * 4);
+            hover = new ClickableTextureComponent(hoverBounds, buttonTexture, new Rectangle(0, 48, 48, 24), 2f);
             for (int i = 0; i < 28; i++)
             {
-                bounds[i] = new Rectangle(xPositionOnScreen + (i) % 7 * 40 * 4 + 75, yPositionOnScreen + 220 + (i) / 7 * 40 * 4, 40 * 4, 40 * 4);
+                bounds[i] = new Rectangle(xPositionOnScreen + (i) % 7 * 40 * 4 + 75, yPositionOnScreen + 220 + (i) / 7 * 40 * 4, 38 * 4, 38 * 4);
             }
             foreach (NPC allCharacter in Utility.getAllCharacters())
             {
@@ -179,6 +181,19 @@ namespace MyAgenda
             base.performHoverAction(x, y);
             hoverText = "";
 
+            if(prev.containsPoint(x, y))
+            {
+                hover.bounds = prev.bounds;
+            }
+            else if(next.containsPoint(x, y))
+            {
+                hover.bounds = next.bounds;
+            }
+            else
+            {
+                hover.bounds = hoverBounds;
+            }
+
             if (bounds == null)
             {
                 return;
@@ -202,6 +217,8 @@ namespace MyAgenda
             for (int i = 0; i < 28; i++)
             {
                 drawStr(b, (pageTitle[season, i] == "" ? titleSubsitute[season, i] : pageTitle[season, i]), bounds[i], Game1.dialogueFont);
+
+                if (season != Utility.getSeasonNumber(Game1.currentSeason)) { continue; }
 
                 if (Game1.dayOfMonth > i + 1)
                 {
@@ -235,9 +252,10 @@ namespace MyAgenda
             xPositionOnScreen = (int)topLeftPositionForCenteringOnScreen.X;
             yPositionOnScreen = (int)topLeftPositionForCenteringOnScreen.Y;
             upperRightCloseButton = new ClickableTextureComponent(new Rectangle(xPositionOnScreen + width - 20, yPositionOnScreen, 48, 48), Game1.mouseCursors, new Rectangle(337, 494, 12, 12), 4f);
-            prev = new ClickableTextureComponent(new Rectangle(xPositionOnScreen + 875, yPositionOnScreen + 50, 48 * 4, 24 * 4), buttonTexture, new Rectangle(0, 24, 48, 24), 2f);
-            next = new ClickableTextureComponent(new Rectangle(xPositionOnScreen + 971, yPositionOnScreen + 50, 48 * 4, 24 * 4), buttonTexture, new Rectangle(0, 0, 48, 24), 2f);
-            hover = new ClickableTextureComponent(new Rectangle(-200, -100, 48 * 4, 24 * 4), buttonTexture, new Rectangle(0, 48, 48, 24), 2f);
+            prev = new ClickableTextureComponent(new Rectangle(xPositionOnScreen + 875, yPositionOnScreen + 50, 96, 48), buttonTexture, new Rectangle(0, 24, 48, 24), 2f);
+            next = new ClickableTextureComponent(new Rectangle(xPositionOnScreen + 971, yPositionOnScreen + 50, 96, 48), buttonTexture, new Rectangle(0, 0, 48, 24), 2f);
+            hoverBounds = new Rectangle(-200, -100, 48 * 4, 24 * 4);
+            hover = new ClickableTextureComponent(hoverBounds, buttonTexture, new Rectangle(0, 48, 48, 24), 2f);
             for (int i = 0; i < 28; i++)
             {
                 bounds[i] = new Rectangle(xPositionOnScreen + (i) % 7 * 40 * 4 + 75, yPositionOnScreen + 224 + (i) / 7 * 40 * 4, 40 * 4, 40 * 4);
