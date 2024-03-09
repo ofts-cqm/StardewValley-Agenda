@@ -115,7 +115,6 @@ namespace MyAgenda
                 Agenda.drawStr(b, getSuitableTitle(), bounds[0], Game1.dialogueFont);
             }
 
-            Agenda.drawStr(b, getSuitableTitle(), bounds[0], Game1.dialogueFont);
             Agenda.drawStr(b, helper.Translation.Get("festival") + (festival == "" ? helper.Translation.Get("none") : festival), bounds[1], Game1.dialogueFont);
             Agenda.drawStr(b, helper.Translation.Get("birthday_page") + (birthday == "" ? helper.Translation.Get("none") : birthday), bounds[2], Game1.dialogueFont);
             

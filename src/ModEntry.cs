@@ -12,6 +12,7 @@ namespace MyAgenda
     {
         ModConfig Config;
         //NamingMenu n;
+        //DialogueBox b;
 
         public override void Entry(IModHelper helper)
         {
@@ -30,10 +31,13 @@ namespace MyAgenda
             Helper.Events.GameLoop.DayStarted += this.dailyCheck;
             Helper.Events.GameLoop.DayEnding += this.dayEnd;
             Helper.Events.GameLoop.GameLaunched += OnGameLaunched;
+            Helper.Events.Content.LocaleChanged += Trigger.reloadTriggerOptions;
             Helper.ConsoleCommands.Add("agenda", "check the items on agenda at the specified date\nUsage: agenda [season(0-3)] [date(0-27)]", query);
 
-            Agenda.monitor = this.Monitor;
-            AgendaPage.monitor = this.Monitor;
+            Agenda.monitor = Monitor;
+            AgendaPage.monitor = Monitor;
+            Trigger.helper = helper;
+            Trigger.monitor = Monitor;
         }
         private void OnButtonPressed(object sender, ButtonPressedEventArgs e)
         {
@@ -73,6 +77,7 @@ namespace MyAgenda
         {
             Agenda.Instance = new Agenda(Helper);
             Agenda.agendaPage = new AgendaPage(Helper);
+            Trigger.Instance = new Trigger();
         }
 
         private void dailyCheck(object sender, DayStartedEventArgs e)
@@ -133,10 +138,18 @@ namespace MyAgenda
         }
 
         private void query(string commend, string[] args)
-        {
+        {   
             if (!Context.IsWorldReady)
             {
                 Monitor.Log("Save not Loaded Yet!", LogLevel.Error);
+            }
+
+            if (args.Length > 0 && args[0] == "open")
+            {
+                Trigger.title = "";
+                Trigger.note = "";
+                Game1.activeClickableMenu = Trigger.Instance;
+                return;
             }
 
             int season, day;
