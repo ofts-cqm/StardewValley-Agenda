@@ -14,6 +14,7 @@
     "autoDelete_tip": "If true, the agenda will be auto-deleted when the day passed",
 	"trigger" : "Trigger: ",
 	"warning": "WARNING: Your current trigger is incomplete. It will not function if you save it. Do you want to save it?",
+	"unsupported": "WARNING: Current trigger contains unsupported feature. It will not function if you save it. Do you want to save it?",
 	"save" : "Yes",
 	"dont_save" : "No",
 	"cancel" : "Cancel",

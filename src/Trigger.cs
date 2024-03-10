@@ -15,7 +15,7 @@ namespace MyAgenda
     {
         public static Trigger Instance;
         public static Texture2D pageTexture;
-        public static int baseheight, basewidth, currentIndex = -1, index1, index2, index3, selected = 0, ticks = 0;
+        public static int baseheight, basewidth, currentIndex = -1, index1, index2, index3, selected = 0, ticks = 0, indexOnPage;
         public static int[] selectedTrigger = new int[3], renderOrder = new int[3];
         public static ChooseFromListMenu triggerListMenu;
         public static ClickableTextureComponent warning, hover;
@@ -24,7 +24,7 @@ namespace MyAgenda
         public static IModHelper helper;
         public static IMonitor monitor;
         public static TextBox tbox;
-        public static string title, note;
+        public static string title, note, warntext;
         public static string[][] choices;
         public static bool warningshown = false, choosing = false;
 
@@ -63,9 +63,25 @@ namespace MyAgenda
 
         public static void saveTrigger() 
         {
+            if (selectedTrigger[2] > 0 && selectedTrigger[2] < 8 && selectedTrigger[0] == 1)
+            {
+                selectedTrigger[2]--;
+                if (selectedTrigger[2] == 0)
+                {
+                    selectedTrigger[2] = 7;
+                }
+            }
+            if (selectedTrigger[2] > 0 && selectedTrigger[2] < 8 && selectedTrigger[0] == 3)
+            {
+                selectedTrigger[2]++;
+                if (selectedTrigger[2] == 8)
+                {
+                    selectedTrigger[2] = 1;
+                }
+            }
             monitor.Log("Trigger saved", LogLevel.Info);
             Instance.exitThisMenu();
-            Game1.activeClickableMenu = Agenda.agendaPage;
+            Game1.activeClickableMenu = Agenda.Instance;
         }
 
         public override void draw(SpriteBatch b)
@@ -86,28 +102,28 @@ namespace MyAgenda
 
             if (selected == 1 && ticks >= 30)
             {
-                Agenda.drawStr(b, title == "" ? helper.Translation.Get("subsitute") : title + "|", bounds[0], Game1.dialogueFont);
+                Util.drawStr(b, title == "" ? helper.Translation.Get("subsitute") : title + "|", bounds[0], Game1.dialogueFont);
             }
             else
             {
-                Agenda.drawStr(b, title == "" ? helper.Translation.Get("subsitute") : title, bounds[0], Game1.dialogueFont);
+                Util.drawStr(b, title == "" ? helper.Translation.Get("subsitute") : title, bounds[0], Game1.dialogueFont);
             }
 
-            Agenda.drawStr(b, helper.Translation.Get("trigger"), bounds[1], Game1.dialogueFont);
+            Util.drawStr(b, helper.Translation.Get("trigger"), bounds[1], Game1.dialogueFont);
             Rectangle triggerBox = bounds[2];
-            index1 = (int)Agenda.drawStr(b, choices[renderOrder[0]][selectedTrigger[renderOrder[0]]], triggerBox, Game1.smallFont).X;
+            index1 = (int)Util.drawStr(b, choices[renderOrder[0]][selectedTrigger[renderOrder[0]]], triggerBox, Game1.smallFont).X;
             triggerBox.X = index1;
-            index2 = (int)Agenda.drawStr(b, choices[renderOrder[1]][selectedTrigger[renderOrder[1]]], triggerBox, Game1.smallFont).X;
+            index2 = (int)Util.drawStr(b, choices[renderOrder[1]][selectedTrigger[renderOrder[1]]], triggerBox, Game1.smallFont).X;
             triggerBox.X = index2;
-            index3 = (int)Agenda.drawStr(b, choices[renderOrder[2]][selectedTrigger[renderOrder[2]]], triggerBox, Game1.smallFont).X;
+            index3 = (int)Util.drawStr(b, choices[renderOrder[2]][selectedTrigger[renderOrder[2]]], triggerBox, Game1.smallFont).X;
 
             if (selected == 2 && ticks >= 30)
             {
-                Agenda.drawStr(b, note + "|", bounds[3], Game1.smallFont);
+                Util.drawStr(b, note + "|", bounds[3], Game1.smallFont);
             }
             else
             {
-                Agenda.drawStr(b, note, bounds[3], Game1.smallFont);
+                Util.drawStr(b, note, bounds[3], Game1.smallFont);
             }
 
             if (warningshown)
@@ -115,13 +131,16 @@ namespace MyAgenda
                 b.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.75f);
                 warning.draw(b);
                 hover.draw(b);
-                b.DrawString(Game1.dialogueFont, helper.Translation.Get("save"), new Vector2(bounds[4].X + 12, bounds[4].Y + 20), Color.Black);
-                b.DrawString(Game1.dialogueFont, helper.Translation.Get("dont_save"), new Vector2(bounds[5].X + 12, bounds[4].Y + 20), Color.Black);
-                b.DrawString(Game1.dialogueFont, helper.Translation.Get("cancel"), new Vector2(bounds[6].X + 12, bounds[4].Y + 20), Color.Black);
+                Util.drawMiddle(b, helper.Translation.Get("save"), bounds[4], Color.Green, Game1.dialogueFont);
+                Util.drawMiddle(b, helper.Translation.Get("dont_save"), bounds[5], Color.Red, Game1.dialogueFont);
+                Util.drawMiddle(b, helper.Translation.Get("cancel"), bounds[6], Color.Black, Game1.dialogueFont);
+                //b.DrawString(Game1.dialogueFont, helper.Translation.Get("save"), new Vector2(bounds[4].X + 12, bounds[4].Y + 20), Color.Black);
+                //b.DrawString(Game1.dialogueFont, helper.Translation.Get("dont_save"), new Vector2(bounds[5].X + 12, bounds[4].Y + 20), Color.Black);
+                //b.DrawString(Game1.dialogueFont, helper.Translation.Get("cancel"), new Vector2(bounds[6].X + 12, bounds[4].Y + 20), Color.Black);
                 //Agenda.drawStr(b, helper.Translation.Get("save"), bounds[4], Game1.dialogueFont);
                 //Agenda.drawStr(b, helper.Translation.Get("dont_save"), bounds[5], Game1.dialogueFont);
                 //Agenda.drawStr(b, helper.Translation.Get("cancel"), bounds[6], Game1.dialogueFont);
-                Agenda.drawStr(b, helper.Translation.Get("warning"), bounds[7], Game1.dialogueFont);
+                Util.drawStr(b, warntext, bounds[7], Game1.dialogueFont);
             }
             else if (choosing)
             {
@@ -229,10 +248,19 @@ namespace MyAgenda
                     selectedTrigger[1] > 0 && selectedTrigger[1] < 12 &&
                     selectedTrigger[2] > 0 && selectedTrigger[2] < 14)
                 {
-                    saveTrigger();
+                    if ((selectedTrigger[2] == 12 || selectedTrigger[2] == 13) && selectedTrigger[0] == 1)
+                    {
+                        warntext = helper.Translation.Get("unsupported");
+                        warningshown = true;
+                    }
+                    else
+                    {
+                        saveTrigger();
+                    }
                 }
                 else
                 {
+                    warntext = helper.Translation.Get("warning");
                     warningshown = true;
                 }
                 return;

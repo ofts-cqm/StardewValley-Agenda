@@ -108,23 +108,23 @@ namespace MyAgenda
 
             if (selected == 1 && ticks >= 30)
             {
-                Agenda.drawStr(b, getSuitableTitle() + "|", bounds[0], Game1.dialogueFont);
+                Util.drawStr(b, getSuitableTitle() + "|", bounds[0], Game1.dialogueFont);
             }
             else
             {
-                Agenda.drawStr(b, getSuitableTitle(), bounds[0], Game1.dialogueFont);
+                Util.drawStr(b, getSuitableTitle(), bounds[0], Game1.dialogueFont);
             }
 
-            Agenda.drawStr(b, helper.Translation.Get("festival") + (festival == "" ? helper.Translation.Get("none") : festival), bounds[1], Game1.dialogueFont);
-            Agenda.drawStr(b, helper.Translation.Get("birthday_page") + (birthday == "" ? helper.Translation.Get("none") : birthday), bounds[2], Game1.dialogueFont);
+            Util.drawStr(b, helper.Translation.Get("festival") + (festival == "" ? helper.Translation.Get("none") : festival), bounds[1], Game1.dialogueFont);
+            Util.drawStr(b, helper.Translation.Get("birthday_page") + (birthday == "" ? helper.Translation.Get("none") : birthday), bounds[2], Game1.dialogueFont);
             
             if(selected == 2 && ticks >= 30)
             {
-                Agenda.drawStr(b, note + "|", bounds[3], Game1.smallFont);
+                Util.drawStr(b, note + "|", bounds[3], Game1.smallFont);
             }
             else
             {
-                Agenda.drawStr(b, note, bounds[3], Game1.smallFont);
+                Util.drawStr(b, note, bounds[3], Game1.smallFont);
             }
             
 

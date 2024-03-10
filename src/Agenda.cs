@@ -15,7 +15,9 @@ namespace MyAgenda
         public static Texture2D agendaTexture, buttonTexture;
         public static ClickableTextureComponent prev, next, hover;
         public static string[,] pageTitle, pageBirthday, pageFestival, pageNote, titleSubsitute;
+        public static string[] triggerTitle, triggerNote;
         public static int season;
+        public static int[][] triggerValue;
         public static Rectangle[] bounds;
         public static Rectangle hoverBounds;
         public static IMonitor monitor;
@@ -34,6 +36,9 @@ namespace MyAgenda
             pageBirthday = new string[4, 28];
             pageFestival = new string[4, 28];
             pageNote = helper.Data.ReadSaveData<string[,]>("notes");
+            triggerTitle = helper.Data.ReadSaveData<string[]>("trigger_title");
+            triggerNote = helper.Data.ReadSaveData<string[]>("trigger_notes");
+            triggerValue = helper.Data.ReadSaveData<int[][]>("triggers");
 
             for (int i = 0; i < 4; i++)
             {
@@ -64,6 +69,34 @@ namespace MyAgenda
                     for (int j = 0; j < 28; j++)
                     {
                         pageNote[i, j] = "";
+                    }
+                }
+            }
+            if (triggerNote == null) 
+            {
+                triggerNote = new string[14];
+                for (int j = 0; j < 14; j++)
+                {
+                    triggerNote[j] = "";
+                }
+            }
+            if (triggerTitle == null)
+            {
+                triggerTitle = new string[14];
+                for (int j = 0; j < 14; j++)
+                {
+                    triggerTitle[j] = "";
+                }
+            }
+            if(triggerValue == null)
+            {
+                triggerValue = new int[14][];
+                for (int i = 0; i < 14; i++)
+                {
+                    triggerValue[i] = new int[3];
+                    for (int j = 0; j < 3; j++)
+                    {
+                        triggerValue[i][j] = 0;
                     }
                 }
             }
@@ -216,7 +249,7 @@ namespace MyAgenda
             b.DrawString(Game1.dialogueFont, Utility.getSeasonNameFromNumber(season), new Vector2(xPositionOnScreen + 160, yPositionOnScreen + 80), Game1.textColor);
             for (int i = 0; i < 28; i++)
             {
-                drawStr(b, (pageTitle[season, i] == "" ? titleSubsitute[season, i] : pageTitle[season, i]), bounds[i], Game1.dialogueFont);
+                Util.drawStr(b, (pageTitle[season, i] == "" ? titleSubsitute[season, i] : pageTitle[season, i]), bounds[i], Game1.dialogueFont);
 
                 if (season != Utility.getSeasonNumber(Game1.currentSeason)) { continue; }
 
@@ -275,32 +308,7 @@ namespace MyAgenda
             helper.Data.WriteSaveData("notes", pageNote);
         }
 
-        public static Vector2 drawStr(SpriteBatch b, string str, Rectangle rec, SpriteFont font, int start_x = 0)
-        {
-            int baseIndex = 0, ypos = rec.Y;
-            for(int i = 0; i < str.Length; i++)
-            {
-                Vector2 measured = font.MeasureString(str.Substring(baseIndex, i - baseIndex));
-                if(measured.Y + ypos > rec.Y + rec.Height)
-                {
-                    measured.X = rec.X;
-                    measured.Y = rec.Y + rec.Height;
-                    return measured;
-                }
-                if (measured.X + start_x > rec.Width)
-                {
-                    b.DrawString(font, str.Substring(baseIndex, i - baseIndex - 1), new Vector2(rec.X + start_x, ypos), Color.Black);
-                    ypos += (int)measured.Y;
-                    start_x = 0;
-                    baseIndex = i - 1;
-                }
-            }
-            b.DrawString(font, str.Substring(baseIndex), new Vector2(rec.X, ypos), Color.Black);
-            Vector2 finalPoint = font.MeasureString(str.Substring(baseIndex));
-            finalPoint.Y += ypos;
-            finalPoint.X += rec.X;
-            return finalPoint;
-        }
+        
 
         public static bool hasSomethingToDo(int season, int day)
         {

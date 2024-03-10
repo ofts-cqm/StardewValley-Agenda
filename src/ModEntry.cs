@@ -5,6 +5,8 @@ using StardewModdingAPI.Utilities;
 using StardewValley;
 using StardewValley.Menus;
 using GenericModConfigMenu;
+using StardewValley.Monsters;
+using System;
 
 namespace MyAgenda
 {
@@ -71,6 +73,9 @@ namespace MyAgenda
         private void onSaveSaved(object sender, SavingEventArgs e)
         {
             Agenda.write(Helper);
+            Helper.Data.WriteSaveData("previous_luck", $"{Util.previousLuckLevel}");
+            Helper.Data.WriteSaveData("islandRained", $"{Util.IslandRained}");
+            Helper.Data.WriteSaveData("mainlandRained", $"{Util.MainlandRained}");
         }
 
         private void onSaveLoaded(object sender, SaveLoadedEventArgs e)
@@ -78,6 +83,15 @@ namespace MyAgenda
             Agenda.Instance = new Agenda(Helper);
             Agenda.agendaPage = new AgendaPage(Helper);
             Trigger.Instance = new Trigger();
+
+            string tmp = Helper.Data.ReadSaveData<string>("previous_luck");
+            if (tmp != null) double.TryParse(tmp, out Util.previousLuckLevel);
+
+            tmp = Helper.Data.ReadSaveData<string>("islandRained");
+            if (tmp != null) bool.TryParse(tmp, out Util.IslandRained);
+
+            tmp = Helper.Data.ReadSaveData<string>("mainlandRained");
+            if (tmp != null) bool.TryParse(tmp, out Util.MainlandRained);
         }
 
         private void dailyCheck(object sender, DayStartedEventArgs e)
@@ -90,6 +104,9 @@ namespace MyAgenda
 
         private void dayEnd(object sender, DayEndingEventArgs e)
         {
+            Util.previousLuckLevel = Game1.player.DailyLuck;
+            Util.IslandRained = Util.isRainHere(GameLocation.LocationContext.Island);
+            Util.IslandRained = Util.isRainHere(GameLocation.LocationContext.Default);
             if (Config.Auto_Delete_After_Complete)
             {
                 int season = Utility.getSeasonNumber(Game1.currentSeason);
@@ -144,11 +161,32 @@ namespace MyAgenda
                 Monitor.Log("Save not Loaded Yet!", LogLevel.Error);
             }
 
-            if (args.Length > 0 && args[0] == "open")
+            if (args.Length == 1 && args[0] == "open")
             {
                 Trigger.title = "";
                 Trigger.note = "";
                 Game1.activeClickableMenu = Trigger.Instance;
+                return;
+            }
+
+            if(args.Length == 4 && args[0] == "parse")
+            {
+                int[] trigger = new int[3];
+                int.TryParse(args[1], out trigger[0]);
+                int.TryParse(args[1], out trigger[1]);
+                int.TryParse(args[1], out trigger[2]);
+                Monitor.Log($"parsing trigger time = {Trigger.choices[0][trigger[0]]}, frequency = {Trigger.choices[1][trigger[1]]}, condition = {Trigger.choices[2][trigger[2]]}", LogLevel.Info);
+                byte result = Util.examinDate(trigger);
+                Monitor.Log($"result is {result}: trigger valid = {result>>7}, should_delete = {(result & 0x40)>> 6}, today = {(result & 0x20) >> 5}", LogLevel.Info);
+                return;
+            }
+
+            if(args.Length == 2 && args[0] == "parse" && args[1] == "cur")
+            {
+                int[] trigger = Trigger.selectedTrigger;
+                Monitor.Log($"parsing trigger time = {Trigger.choices[0][trigger[0]]}, frequency = {Trigger.choices[1][trigger[1]]}, condition = {Trigger.choices[2][trigger[2]]}", LogLevel.Info);
+                byte result = Util.examinDate(trigger);
+                Monitor.Log($"result is {result}: trigger valid = {result >> 7}, should_delete = {(result & 0x40) >> 6}, today = {(result & 0x20) >> 5}", LogLevel.Info);
                 return;
             }
 
