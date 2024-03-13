@@ -17,8 +17,18 @@ namespace MyAgenda
         public static IModHelper helper;
         public static TextBox tbox;
 
-        public AgendaPage(IModHelper helper) : base(0, 0, 0, 0, showUpperRightCloseButton: true)
+        public AgendaPage(IModHelper helper) : base()
         {
+            Game1.mouseCursorTransparency = 1f;
+            if (Game1.gameMode == 3 && Game1.player != null && !Game1.eventUp)
+            {
+                Game1.player.Halt();
+            }
+            if (Game1.player != null && !Game1.player.UsingTool && !Game1.eventUp)
+            {
+                Game1.player.forceCanMove();
+            }
+
             pageTexture = helper.ModContent.Load<Texture2D>("assets\\page");
             tbox = new TextBox(null, null, Game1.dialogueFont, Color.Black);
             tbox.X = 100000000;

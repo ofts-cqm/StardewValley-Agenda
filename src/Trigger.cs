@@ -6,8 +6,7 @@ using StardewValley;
 using StardewModdingAPI;
 using Microsoft.Xna.Framework.Input;
 using StardewModdingAPI.Events;
-using static System.Net.Mime.MediaTypeNames;
-using System;
+using StardewValley.Monsters;
 
 namespace MyAgenda
 {
@@ -28,7 +27,18 @@ namespace MyAgenda
         public static string[][] choices;
         public static bool warningshown = false, choosing = false;
 
-        public Trigger() : base(0, 0, 0 ,0, true){
+        public Trigger() : base()
+        {
+            Game1.mouseCursorTransparency = 1f;
+            if (Game1.gameMode == 3 && Game1.player != null && !Game1.eventUp)
+            {
+                Game1.player.Halt();
+            }
+            if (Game1.player != null && !Game1.player.UsingTool && !Game1.eventUp)
+            {
+                Game1.player.forceCanMove();
+            }
+
             pageTexture = helper.ModContent.Load<Texture2D>("assets\\page");
             tbox = new TextBox(null, null, Game1.dialogueFont, Color.Black);
             tbox.X = 100000000;
@@ -43,7 +53,6 @@ namespace MyAgenda
         public void loadTrigger(int index)
         {
             choosing = true;
-            monitor.Log($"selected trigger index {index}", LogLevel.Info);
             currentIndex = index;
             triggerListMenu = new ChooseFromListMenu(new List<string>(choices[index]), triggerChose, default_selection : choices[index][selectedTrigger[index]]);
         }
@@ -70,6 +79,7 @@ namespace MyAgenda
                 {
                     selectedTrigger[2] = 7;
                 }
+                selectedTrigger[0] = 2;
             }
             if (selectedTrigger[2] > 0 && selectedTrigger[2] < 8 && selectedTrigger[0] == 3)
             {
@@ -78,8 +88,21 @@ namespace MyAgenda
                 {
                     selectedTrigger[2] = 1;
                 }
+                selectedTrigger[0] = 2;
             }
+            Agenda.triggerValue[indexOnPage] = selectedTrigger;
+            Agenda.triggerTitle[indexOnPage] = title;
+            Agenda.triggerNote[indexOnPage] = note;
+            tbox.Text = "";
             monitor.Log("Trigger saved", LogLevel.Info);
+            byte result = Util.examinDate(selectedTrigger);
+            // 有东西！
+            if ((result & 0xF0) != 0)
+            {
+                // 骚扰一下玩家
+                Game1.addHUDMessage(new HUDMessage(helper.Translation.Get("triggered"), 2));
+                Game1.addHUDMessage(new HUDMessage(title, 2));
+            }
             Instance.exitThisMenu();
             Game1.activeClickableMenu = Agenda.Instance;
         }
@@ -229,6 +252,7 @@ namespace MyAgenda
                 else if (bounds[5].Contains(x, y))
                 {
                     warningshown = false;
+                    tbox.Text = "";
                     exitThisMenu();
                     Game1.activeClickableMenu = Agenda.Instance;
                     monitor.Log("Warn: trigger not saved", LogLevel.Warn);
@@ -236,7 +260,6 @@ namespace MyAgenda
                 else if (bounds[6].Contains(x, y))
                 {
                     warningshown = false;
-                    monitor.Log("Canceled", LogLevel.Info);
                 }
                 return;
             }

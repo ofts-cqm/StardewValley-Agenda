@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework.Graphics;
 using StardewValley.Menus;
 using StardewValley;
 using StardewModdingAPI;
+using StardewValley.Monsters;
 
 namespace MyAgenda
 {
@@ -12,24 +13,34 @@ namespace MyAgenda
     {
         public static Agenda Instance;
         public static AgendaPage agendaPage;
-        public static Texture2D agendaTexture, buttonTexture;
+        public static Texture2D agendaTexture, buttonTexture, triggerTexture;
         public static ClickableTextureComponent prev, next, hover;
         public static string[,] pageTitle, pageBirthday, pageFestival, pageNote, titleSubsitute;
         public static string[] triggerTitle, triggerNote;
         public static int season;
         public static int[][] triggerValue;
-        public static Rectangle[] bounds;
+        public static Rectangle[] bounds, triggerBounds, triggerValueBounds;
         public static Rectangle hoverBounds;
         public static IMonitor monitor;
         public static IModHelper helper;
         public static string hoverText = "";
 
-        public Agenda(IModHelper helper)
-            : base(0, 0, 0, 0, showUpperRightCloseButton: true)
+        public Agenda(IModHelper helper) : base()
         {
+            Game1.mouseCursorTransparency = 1f;
+            if (Game1.gameMode == 3 && Game1.player != null && !Game1.eventUp)
+            {
+                Game1.player.Halt();
+            }
+            if (Game1.player != null && !Game1.player.UsingTool && !Game1.eventUp)
+            {
+                Game1.player.forceCanMove();
+            }
+
             Agenda.helper = helper;
             agendaTexture = helper.ModContent.Load<Texture2D>("assets\\Agenda");
             buttonTexture = helper.ModContent.Load<Texture2D>("assets\\buttons");
+            triggerTexture = helper.ModContent.Load<Texture2D>("assets\\trigger");
 
             pageTitle = helper.Data.ReadSaveData<string[,]>("title");
             titleSubsitute = new string[4, 28];
@@ -101,6 +112,8 @@ namespace MyAgenda
                 }
             }
             bounds = new Rectangle[28];
+            triggerBounds = new Rectangle[14];
+            triggerValueBounds = new Rectangle[14];
 
             season = Utility.getSeasonNumber(Game1.currentSeason);
             width = 316 * 4;
@@ -117,12 +130,25 @@ namespace MyAgenda
             {
                 bounds[i] = new Rectangle(xPositionOnScreen + (i) % 7 * 40 * 4 + 75, yPositionOnScreen + 220 + (i) / 7 * 40 * 4, 38 * 4, 38 * 4);
             }
+            for (int i = 0; i < 14; i++)
+            {
+                triggerBounds[i] = new Rectangle(xPositionOnScreen + (i) % 7 * 40 * 4 + 75, yPositionOnScreen + 220 + (i) / 7 * 80 * 4, 38 * 4, 48 * 4);
+            }
+            for (int i = 0; i < 14; i++)
+            {
+                triggerValueBounds[i] = new Rectangle(xPositionOnScreen + (i) % 7 * 40 * 4 + 75, yPositionOnScreen + 220 + 50 * 4 + (i) / 7 * 80 * 4, 38 * 4, 28 * 4);
+            }
             foreach (NPC allCharacter in Utility.getAllCharacters())
             {
                 if (allCharacter.isVillager() && allCharacter.Birthday_Season != null && (Game1.player.friendshipData.ContainsKey(allCharacter.Name) || (!allCharacter.Name.Equals("Dwarf") && !allCharacter.Name.Equals("Sandy") && !allCharacter.Name.Equals("Krobus"))))
                 {
-                    pageBirthday[Utility.getSeasonNumber(allCharacter.Birthday_Season), allCharacter.Birthday_Day - 1] = allCharacter.displayName;
-                    titleSubsitute[Utility.getSeasonNumber(allCharacter.Birthday_Season), allCharacter.Birthday_Day - 1] += helper.Translation.Get("birthday_title", new { character = allCharacter.displayName });
+                    try
+                    {
+                        pageBirthday[Utility.getSeasonNumber(allCharacter.Birthday_Season), allCharacter.Birthday_Day - 1] = allCharacter.displayName;
+                        titleSubsitute[Utility.getSeasonNumber(allCharacter.Birthday_Season), allCharacter.Birthday_Day - 1] += helper.Translation.Get("birthday_title", new { character = allCharacter.displayName });
+
+                    }
+                    catch (Exception) { }
                 }
             }
             var festivals = Game1.temporaryContent.Load<Dictionary<string, string>>("Data\\Festivals\\FestivalDates");
@@ -179,14 +205,34 @@ namespace MyAgenda
             if(next.containsPoint(x, y))
             {
                 season ++;
-                season %= 4;
+                season %= 5;
                 return;
             }
 
             if (prev.containsPoint(x, y))
             {
                 season+=3;
-                season %= 4;
+                season %= 5;
+                return;
+            }
+
+            if(season == 4)
+            {
+                for(int i = 0; i < 14; i++)
+                {
+                    if (triggerBounds[i].Contains(x, y))
+                    {
+                        exitThisMenu();
+                        Game1.keyboardDispatcher.Subscriber = Trigger.tbox;
+                        Trigger.note = triggerNote[i];
+                        Trigger.title = triggerTitle[i];
+                        Trigger.indexOnPage = i;
+                        Trigger.selectedTrigger = triggerValue[i];
+                        Trigger.selected = 0;
+                        Game1.activeClickableMenu = Trigger.Instance;
+                        return;
+                    }
+                }
                 return;
             }
 
@@ -232,6 +278,19 @@ namespace MyAgenda
                 return;
             }
 
+            if(season == 4)
+            {
+                for(int i = 0; i < 14; i++)
+                {
+                    if (triggerBounds[i].Contains(x, y))
+                    {
+                        hoverText = triggerNote[i].Substring(0, Math.Min(triggerNote[i].Length, 20));
+                        return;
+                    }
+                }
+                return;
+            }
+
             for (int i = 0; i < 28; i++)
             {
                 if (bounds[i].Contains(x, y))
@@ -245,24 +304,38 @@ namespace MyAgenda
         public override void draw(SpriteBatch b)
         {
             b.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.75f);
-            b.Draw(agendaTexture, new Vector2(xPositionOnScreen, yPositionOnScreen - 226 * 4), new Rectangle(0, 0, 316, 456), Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 1f);
-            b.DrawString(Game1.dialogueFont, Utility.getSeasonNameFromNumber(season), new Vector2(xPositionOnScreen + 160, yPositionOnScreen + 80), Game1.textColor);
-            for (int i = 0; i < 28; i++)
+            if(season != 4)
             {
-                Util.drawStr(b, (pageTitle[season, i] == "" ? titleSubsitute[season, i] : pageTitle[season, i]), bounds[i], Game1.dialogueFont);
-
-                if (season != Utility.getSeasonNumber(Game1.currentSeason)) { continue; }
-
-                if (Game1.dayOfMonth > i + 1)
+                b.Draw(agendaTexture, new Vector2(xPositionOnScreen, yPositionOnScreen - 226 * 4), new Rectangle(0, 0, 316, 456), Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 1f);
+                b.DrawString(Game1.dialogueFont, Utility.getSeasonNameFromNumber(season), new Vector2(xPositionOnScreen + 160, yPositionOnScreen + 80), Game1.textColor);
+                for (int i = 0; i < 28; i++)
                 {
-                    b.Draw(Game1.staminaRect, bounds[i], Color.Gray * 0.25f);
-                }
-                else if (Game1.dayOfMonth == i + 1)
-                {
-                    int num = (int)(4f * Game1.dialogueButtonScale / 8f);
-                    drawTextureBox(b, Game1.mouseCursors, new Rectangle(379, 357, 3, 3), bounds[i].X - num, bounds[i].Y - num, bounds[i].Width + num * 2, bounds[i].Height + num * 2, Color.Blue, 4f, drawShadow: false);
+                    Util.drawStr(b, (pageTitle[season, i] == "" ? titleSubsitute[season, i] : pageTitle[season, i]), bounds[i], Game1.dialogueFont);
+
+                    if (season != Utility.getSeasonNumber(Game1.currentSeason)) { continue; }
+
+                    if (Game1.dayOfMonth > i + 1)
+                    {
+                        b.Draw(Game1.staminaRect, bounds[i], Color.Gray * 0.25f);
+                    }
+                    else if (Game1.dayOfMonth == i + 1)
+                    {
+                        int num = (int)(4f * Game1.dialogueButtonScale / 8f);
+                        drawTextureBox(b, Game1.mouseCursors, new Rectangle(379, 357, 3, 3), bounds[i].X - num, bounds[i].Y - num, bounds[i].Width + num * 2, bounds[i].Height + num * 2, Color.Blue, 4f, drawShadow: false);
+                    }
                 }
             }
+            else
+            {
+                b.DrawString(Game1.dialogueFont, helper.Translation.Get("trigger"), new Vector2(xPositionOnScreen + 160, yPositionOnScreen + 80), Game1.textColor);
+                b.Draw(triggerTexture, new Vector2(xPositionOnScreen, yPositionOnScreen - 226 * 4), new Rectangle(0, 0, 316, 456), Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 1f);
+                for (int i = 0; i < 14; i++)
+                {
+                    Util.drawStr(b, (triggerTitle[i] == "" ? helper.Translation.Get("subsitute") : triggerTitle[i]), triggerBounds[i], Game1.dialogueFont);
+                    drawTrigger(b, i);
+                }
+            }
+            
 
             base.draw(b);
             prev.draw(b);
@@ -293,6 +366,14 @@ namespace MyAgenda
             {
                 bounds[i] = new Rectangle(xPositionOnScreen + (i) % 7 * 40 * 4 + 75, yPositionOnScreen + 224 + (i) / 7 * 40 * 4, 40 * 4, 40 * 4);
             }
+            for (int i = 0; i < 14; i++)
+            {
+                triggerBounds[i] = new Rectangle(xPositionOnScreen + (i) % 7 * 40 * 4 + 75, yPositionOnScreen + 220 + (i) / 7 * 80 * 4, 38 * 4, 48 * 4);
+            }
+            for (int i = 0; i < 14; i++)
+            {
+                triggerValueBounds[i] = new Rectangle(xPositionOnScreen + (i) % 7 * 40 * 4 + 75, yPositionOnScreen + 220 + 60 * 4 + (i) / 7 * 80 * 4, 38 * 4, 28 * 4);
+            }
         }
 
         public static void save(int season, int day)
@@ -306,9 +387,23 @@ namespace MyAgenda
         {
             helper.Data.WriteSaveData("title", pageTitle);
             helper.Data.WriteSaveData("notes", pageNote);
+            helper.Data.WriteSaveData("trigger_title", triggerTitle);
+            helper.Data.WriteSaveData("trigger_notes", triggerNote);
+            helper.Data.WriteSaveData("triggers", triggerValue);
         }
 
-        
+        public static void drawTrigger(SpriteBatch b, int index)
+        {
+            Rectangle triggerBox = triggerValueBounds[index];
+             
+            Vector2 lastPosition = Util.drawStr(b, Trigger.choices[Trigger.renderOrder[0]][triggerValue[index][Trigger.renderOrder[0]]], triggerBox, Game1.smallFont);
+            triggerBox.Y = (int)lastPosition.Y;
+            triggerBox.Height = (int)(triggerValueBounds[index].Height + triggerValueBounds[index].Y - lastPosition.Y);
+            lastPosition = Util.drawStr(b, Trigger.choices[Trigger.renderOrder[1]][triggerValue[index][Trigger.renderOrder[1]]], triggerBox, Game1.smallFont, (int)lastPosition.X - triggerBox.X);
+            triggerBox.Y = (int)lastPosition.Y;
+            triggerBox.Height = (int)(triggerValueBounds[index].Height + triggerValueBounds[index].Y - lastPosition.Y);
+            Util.drawStr(b, Trigger.choices[Trigger.renderOrder[2]][triggerValue[index][Trigger.renderOrder[2]]], triggerBox, Game1.smallFont, (int)lastPosition.X - triggerBox.X);
+        }
 
         public static bool hasSomethingToDo(int season, int day)
         {
