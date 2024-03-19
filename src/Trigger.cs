@@ -7,6 +7,7 @@ using StardewModdingAPI;
 using Microsoft.Xna.Framework.Input;
 using StardewModdingAPI.Events;
 using StardewValley.Monsters;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace MyAgenda
 {
@@ -23,7 +24,7 @@ namespace MyAgenda
         public static IModHelper helper;
         public static IMonitor monitor;
         public static TextBox tbox;
-        public static string title, note, warntext;
+        public static string title, note, warntext, title_back, note_back;
         public static string[][] choices;
         public static bool warningshown = false, choosing = false;
 
@@ -46,6 +47,7 @@ namespace MyAgenda
             tbox.Width = 114514;
             tbox.Height = 114514;
             tbox.OnEnterPressed += textBoxEnter;
+            tbox.OnBackspacePressed += textBoxback;
             resize();
             reloadTriggerOptions(null, null);
         }
@@ -53,6 +55,7 @@ namespace MyAgenda
         public void loadTrigger(int index)
         {
             choosing = true;
+            selected = 0;
             currentIndex = index;
             triggerListMenu = new ChooseFromListMenu(new List<string>(choices[index]), triggerChose, default_selection : choices[index][selectedTrigger[index]]);
         }
@@ -91,9 +94,9 @@ namespace MyAgenda
                 selectedTrigger[0] = 2;
             }
             Agenda.triggerValue[indexOnPage] = selectedTrigger;
-            Agenda.triggerTitle[indexOnPage] = title;
-            Agenda.triggerNote[indexOnPage] = note;
-            tbox.Text = "";
+            Agenda.triggerTitle[indexOnPage] = title + title_back;
+            Agenda.triggerNote[indexOnPage] = note + note_back;
+            tbox.Text = "0";
             monitor.Log("Trigger saved", LogLevel.Info);
             byte result = Util.examinDate(selectedTrigger);
             // 有东西！
@@ -113,23 +116,36 @@ namespace MyAgenda
             ticks %= 60;
             if (selected == 1)
             {
-                title = tbox.Text;
+                title += tbox.Text.Substring(1);
             }
             else if (selected == 2)
             {
-                note = tbox.Text;
+                note += tbox.Text.Substring(1);
+            }
+
+            if (selected != 0)
+            {
+                tbox.Text = "0";
             }
 
             if(!warningshown && !choosing) b.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.75f);
             b.Draw(pageTexture, new Vector2(xPositionOnScreen, yPositionOnScreen), new Rectangle(0, 0, 200, 238), Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 1f);
 
-            if (selected == 1 && ticks >= 30)
+            if (selected == 1)
             {
-                Util.drawStr(b, title == "" ? helper.Translation.Get("subsitute") : title + "|", bounds[0], Game1.dialogueFont);
+                if(ticks >= 30)
+                {
+                    Util.drawStr(b, title + "|" + title_back, bounds[0], Game1.dialogueFont);
+                }
+                else
+                {
+                    Util.drawStr(b, title + " " + title_back, bounds[0], Game1.dialogueFont);
+                }
+                
             }
             else
             {
-                Util.drawStr(b, title == "" ? helper.Translation.Get("subsitute") : title, bounds[0], Game1.dialogueFont);
+                Util.drawStr(b, title + title_back == "" ? helper.Translation.Get("subsitute") : title + title_back, bounds[0], Game1.dialogueFont);
             }
 
             Util.drawStr(b, helper.Translation.Get("trigger"), bounds[1], Game1.dialogueFont);
@@ -140,14 +156,15 @@ namespace MyAgenda
             triggerBox.X = index2;
             index3 = (int)Util.drawStr(b, choices[renderOrder[2]][selectedTrigger[renderOrder[2]]], triggerBox, Game1.smallFont).X;
 
-            if (selected == 2 && ticks >= 30)
+            /*if (selected == 2 && ticks >= 30)
             {
-                Util.drawStr(b, note + "|", bounds[3], Game1.smallFont);
+                Util.drawStr(b, note + "|" + note_back, bounds[3], Game1.smallFont);
             }
             else
             {
-                Util.drawStr(b, note, bounds[3], Game1.smallFont);
-            }
+                Util.drawStr(b, note + " " + note_back, bounds[3], Game1.smallFont);
+            }*/
+            Util.drawStr(b, getSuitableNote(), bounds[3], Game1.smallFont);
 
             if (warningshown)
             {
@@ -252,7 +269,7 @@ namespace MyAgenda
                 else if (bounds[5].Contains(x, y))
                 {
                     warningshown = false;
-                    tbox.Text = "";
+                    tbox.Text = "0";
                     exitThisMenu();
                     Game1.activeClickableMenu = Agenda.Instance;
                     monitor.Log("Warn: trigger not saved", LogLevel.Warn);
@@ -313,11 +330,12 @@ namespace MyAgenda
                 if (selected == 0)
                 {
                     tbox.SelectMe();
-                    tbox.Text = "";
+                    tbox.Text = "0";
                 }
-                if (selected != 1)
+                if(selected == 2)
                 {
-                    tbox.Text = title;
+                    note += note_back;
+                    note_back = "";
                 }
                 selected = 1;
                 return;
@@ -327,11 +345,12 @@ namespace MyAgenda
                 if (selected == 0)
                 {
                     tbox.SelectMe();
-                    tbox.Text = "";
+                    tbox.Text = "0";
                 }
-                if (selected != 2)
+                if (selected == 1)
                 {
-                    tbox.Text = note;
+                    title += title_back;
+                    title_back = "";
                 }
                 selected = 2;
                 return;
@@ -355,13 +374,68 @@ namespace MyAgenda
 
         public void textBoxEnter(TextBox sender)
         {
-            if (warningshown) return;
+            if (warningshown || selected == 1) return;
             sender.Text += "\n";
+        }
+
+        public void textBoxback(TextBox sender)
+        {
+            if(selected == 1)
+            {
+                //monitor.Log("title", LogLevel.Info);
+                if(title.Length > 0) title = title.Substring(0, title.Length - 1);
+            }
+            else if(selected == 2)
+            {
+                //monitor.Log("note", LogLevel.Info);
+                if(note.Length > 0) note = note.Substring(0, note.Length - 1);
+            }
+        }
+
+        public string getSuitableNote()
+        {
+            if (selected == 2)
+            {
+                return note + (ticks > 30 ? " " : "|") + note_back;
+            }
+
+            if (note != "")
+            {
+                return note + note_back;
+            }
+
+            return helper.Translation.Get("subsitute_note");
         }
 
         public override void receiveKeyPress(Keys key)
         {
             if (warningshown) return;
+            if(selected == 1)
+            {
+                if(key == Keys.Left && title.Length > 0)
+                {
+                    title_back = title[title.Length - 1] + title_back;
+                    title = title.Substring(0, title.Length - 1);
+                }
+                else if(key == Keys.Right && title_back.Length > 0)
+                {
+                    title += title_back[0];
+                    title_back = title_back.Substring(1);
+                }
+            }
+            else if(selected == 2)
+            {
+                if (key == Keys.Left && note.Length > 0)
+                {
+                    note_back = note[note.Length - 1] + note_back;
+                    note = note.Substring(0, note.Length - 1);
+                }
+                else if (key == Keys.Right && note_back.Length > 0)
+                {
+                    note += note_back[0];
+                    note_back = note_back.Substring(1);
+                }
+            }
             if (!tbox.Selected && !Game1.options.doesInputListContain(Game1.options.menuButton, key))
             {
                 base.receiveKeyPress(key);

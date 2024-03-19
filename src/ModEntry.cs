@@ -5,6 +5,7 @@ using StardewModdingAPI.Utilities;
 using StardewValley;
 using StardewValley.Menus;
 using GenericModConfigMenu;
+using System;
 
 namespace MyAgenda
 {
@@ -108,9 +109,12 @@ namespace MyAgenda
         private void dailyCheck(object sender, DayStartedEventArgs e)
         {
             // 检查当天的Agenda
-            if(Agenda.hasSomethingToDo(Utility.getSeasonNumber(Game1.currentSeason), Game1.dayOfMonth - 1))
+            int season = Utility.getSeasonNumber(Game1.currentSeason);
+            int day = Game1.dayOfMonth - 1;
+            if (Agenda.hasSomethingToDo(season, day))
             {
                 Game1.addHUDMessage(new HUDMessage(Helper.Translation.Get("pop_up"), 2));
+                Game1.addHUDMessage(new HUDMessage(getDisplayTitle(season, day), 2));
             }
             // 遍历所有Trigger
             for(int i = 0; i < 14; i++)
@@ -280,7 +284,23 @@ namespace MyAgenda
                 Monitor.Log("INCOMPLETE COMMEND!", LogLevel.Error);
             }
         }
+
+        public static string getDisplayTitle(int season, int day)
+        {
+            if (Agenda.pageTitle[season, day] != "")
+            {
+                return Agenda.pageTitle[season, day];
+            }
+
+            if (Agenda.titleSubsitute[season, day] != "")
+            {
+                return Agenda.titleSubsitute[season, day];
+            }
+
+            return Agenda.pageNote[season, day].Substring(0, Math.Min(Agenda.pageNote[season, day].Length, 20));
+        }
     }
+    
     public sealed class ModConfig
     {
         public KeybindList AgendaKey { get; set; } = KeybindList.Parse("G");

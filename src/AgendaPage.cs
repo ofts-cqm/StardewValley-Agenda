@@ -9,7 +9,7 @@ namespace MyAgenda
 {
     public class AgendaPage : IClickableMenu
     {
-        public string festival, birthday, title, subsituteTitle, note;
+        public string festival, birthday, title, subsituteTitle, note, note_back, title_back;
         public int season, day, selected, ticks = 0;
         public static Texture2D pageTexture;
         public static Rectangle[] bounds = new Rectangle[4];
@@ -31,13 +31,29 @@ namespace MyAgenda
 
             pageTexture = helper.ModContent.Load<Texture2D>("assets\\page");
             tbox = new TextBox(null, null, Game1.dialogueFont, Color.Black);
+            tbox.Text = "0";
             tbox.X = 100000000;
             tbox.Y = 100000000;
             tbox.Width = 114514;
             tbox.Height = 114514;
             tbox.OnEnterPressed += textBoxEnter;
+            tbox.OnBackspacePressed += textBoxback;
             resize();
             AgendaPage.helper = helper;
+        }
+
+        public void textBoxback(TextBox sender)
+        {
+            if (selected == 1)
+            {
+                //monitor.Log("title", LogLevel.Info);
+                if (title.Length > 0) title = title.Substring(0, title.Length - 1);
+            }
+            else if (selected == 2)
+            {
+                //monitor.Log("note", LogLevel.Info);
+                if (note.Length > 0) note = note.Substring(0, note.Length - 1);
+            }
         }
 
         public override void receiveLeftClick(int x, int y, bool playSound = true)
@@ -48,11 +64,12 @@ namespace MyAgenda
                 if(selected == 0)
                 {
                     tbox.SelectMe();
-                    tbox.Text = "";
+                    tbox.Text = "0";
                 }
-                if(selected != 1)
+                if(selected == 2)
                 {
-                    tbox.Text = title;
+                    note += note_back;
+                    note_back = "";
                 }
                 selected = 1;
                 return;
@@ -62,11 +79,12 @@ namespace MyAgenda
                 if (selected == 0)
                 {
                     tbox.SelectMe();
-                    tbox.Text = "";
+                    tbox.Text = "0";
                 }
-                if (selected != 2)
+                if(selected == 1)
                 {
-                    tbox.Text = note;
+                    title += title_back;
+                    title_back = "";
                 }
                 selected = 2;
                 return;
@@ -106,38 +124,37 @@ namespace MyAgenda
             ticks %= 60;
             if(selected == 1)
             {
-                title = tbox.Text;
+                title += tbox.Text.Substring(1);
             }
             else if(selected == 2)
             {
-                note = tbox.Text;
+                note += tbox.Text.Substring(1);
+            }
+
+            if(selected != 0)
+            {
+                tbox.Text = "0";
             }
 
             b.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.75f);
             b.Draw(pageTexture, new Vector2(xPositionOnScreen, yPositionOnScreen), new Rectangle(0, 0, 200, 238), Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 1f);
 
-            if (selected == 1 && ticks >= 30)
-            {
-                Util.drawStr(b, getSuitableTitle() + "|", bounds[0], Game1.dialogueFont);
-            }
-            else
-            {
-                Util.drawStr(b, getSuitableTitle(), bounds[0], Game1.dialogueFont);
-            }
+            Util.drawStr(b, getSuitableTitle(), bounds[0], Game1.dialogueFont);
 
             Util.drawStr(b, helper.Translation.Get("festival") + (festival == "" ? helper.Translation.Get("none") : festival), bounds[1], Game1.dialogueFont);
             Util.drawStr(b, helper.Translation.Get("birthday_page") + (birthday == "" ? helper.Translation.Get("none") : birthday), bounds[2], Game1.dialogueFont);
-            
+
+            /*
             if(selected == 2 && ticks >= 30)
             {
-                Util.drawStr(b, note + "|", bounds[3], Game1.smallFont);
+                Util.drawStr(b, note + "|" + note_back, bounds[3], Game1.smallFont);
             }
             else
             {
-                Util.drawStr(b, note, bounds[3], Game1.smallFont);
-            }
+                Util.drawStr(b, note + " " + note_back, bounds[3], Game1.smallFont);
+            }*/
+            Util.drawStr(b, getSuitableNote(), bounds[3], Game1.smallFont);
             
-
             base.draw(b);
             tbox.Draw(b);
             Game1.mouseCursorTransparency = 1f;
@@ -146,6 +163,32 @@ namespace MyAgenda
 
         public override void receiveKeyPress(Keys key)
         {
+            if (selected == 1)
+            {
+                if (key == Keys.Left && title.Length > 0)
+                {
+                    title_back = title[title.Length - 1] + title_back;
+                    title = title.Substring(0, title.Length - 1);
+                }
+                else if (key == Keys.Right && title_back.Length > 0)
+                {
+                    title += title_back[0];
+                    title_back = title_back.Substring(1);
+                }
+            }
+            else if (selected == 2)
+            {
+                if (key == Keys.Left && note.Length > 0)
+                {
+                    note_back = note[note.Length - 1] + note_back;
+                    note = note.Substring(0, note.Length - 1);
+                }
+                else if (key == Keys.Right && note_back.Length > 0)
+                {
+                    note += note_back[0];
+                    note_back = note_back.Substring(1);
+                }
+            }
             if (!tbox.Selected && !Game1.options.doesInputListContain(Game1.options.menuButton, key))
             {
                 base.receiveKeyPress(key);
@@ -153,9 +196,14 @@ namespace MyAgenda
         }
         public string getSuitableTitle()
         {
+            if(selected == 1)
+            {
+                return title + (ticks > 30 ? " " : "|") + title_back;
+            }
+
             if(title != "")
             {
-                return title;
+                return title + title_back;
             }
 
             if(subsituteTitle != "")
@@ -164,6 +212,21 @@ namespace MyAgenda
             }
 
             return helper.Translation.Get("subsitute");
+        }
+
+        public string getSuitableNote()
+        {
+            if (selected == 2)
+            {
+                return note + (ticks > 30 ? " " : "|") + note_back;
+            }
+
+            if (note != "")
+            {
+                return note + note_back;
+            }
+
+            return helper.Translation.Get("subsitute_note");
         }
 
         public void textBoxEnter(TextBox sender)

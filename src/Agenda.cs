@@ -211,7 +211,7 @@ namespace MyAgenda
 
             if (prev.containsPoint(x, y))
             {
-                season+=3;
+                season+=4;
                 season %= 5;
                 return;
             }
@@ -226,6 +226,8 @@ namespace MyAgenda
                         Game1.keyboardDispatcher.Subscriber = Trigger.tbox;
                         Trigger.note = triggerNote[i];
                         Trigger.title = triggerTitle[i];
+                        Trigger.note_back = "";
+                        Trigger.title_back = "";
                         Trigger.indexOnPage = i;
                         Trigger.selectedTrigger = triggerValue[i];
                         Trigger.selected = 0;
@@ -244,6 +246,8 @@ namespace MyAgenda
                     Game1.keyboardDispatcher.Subscriber = AgendaPage.tbox;
                     agendaPage.note = pageNote[season, i];
                     agendaPage.title = pageTitle[season, i];
+                    agendaPage.title_back = "";
+                    agendaPage.note_back = "";
                     agendaPage.subsituteTitle = titleSubsitute[season, i];
                     agendaPage.birthday = pageBirthday[season, i];
                     agendaPage.festival = pageFestival[season, i];
@@ -372,15 +376,16 @@ namespace MyAgenda
             }
             for (int i = 0; i < 14; i++)
             {
-                triggerValueBounds[i] = new Rectangle(xPositionOnScreen + (i) % 7 * 40 * 4 + 75, yPositionOnScreen + 220 + 60 * 4 + (i) / 7 * 80 * 4, 38 * 4, 28 * 4);
+                triggerValueBounds[i] = new Rectangle(xPositionOnScreen + (i) % 7 * 40 * 4 + 75, yPositionOnScreen + 220 + 50 * 4 + (i) / 7 * 80 * 4, 38 * 4, 28 * 4);
             }
         }
 
         public static void save(int season, int day)
         {
-            pageTitle[season, day] = agendaPage.title;
-            pageNote[season, day] = agendaPage.note;
+            pageTitle[season, day] = agendaPage.title + agendaPage.title_back;
+            pageNote[season, day] = agendaPage.note + agendaPage.note_back;
             agendaPage.selected = 0;
+            AgendaPage.tbox.Text = "0";
         }
 
         public static void write(IModHelper helper)
