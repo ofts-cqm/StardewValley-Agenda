@@ -6,8 +6,6 @@ using StardewValley;
 using StardewModdingAPI;
 using Microsoft.Xna.Framework.Input;
 using StardewModdingAPI.Events;
-using StardewValley.Monsters;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace MyAgenda
 {

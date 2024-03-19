@@ -140,7 +140,7 @@ namespace MyAgenda
             }
             foreach (NPC allCharacter in Utility.getAllCharacters())
             {
-                if (allCharacter.isVillager() && allCharacter.Birthday_Season != null && (Game1.player.friendshipData.ContainsKey(allCharacter.Name) || (!allCharacter.Name.Equals("Dwarf") && !allCharacter.Name.Equals("Sandy") && !allCharacter.Name.Equals("Krobus"))))
+                if (allCharacter.IsVillager && allCharacter.Birthday_Season != null && (Game1.player.friendshipData.ContainsKey(allCharacter.Name) || (!allCharacter.Name.Equals("Dwarf") && !allCharacter.Name.Equals("Sandy") && !allCharacter.Name.Equals("Krobus"))))
                 {
                     try
                     {

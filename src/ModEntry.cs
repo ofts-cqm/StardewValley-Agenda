@@ -138,6 +138,7 @@ namespace MyAgenda
             {
                 int season = Utility.getSeasonNumber(Game1.currentSeason);
                 int day = Game1.dayOfMonth - 1;
+                if (season > 3 || season < 0 || day > 27 || day < 0) return;
                 Agenda.pageNote[season, day] = "";
                 Agenda.pageTitle[season, day] = "";
 
@@ -179,8 +180,8 @@ namespace MyAgenda
 
             // 一天结束了，把昨天的东西设置成今天的
             Util.previousLuckLevel = Game1.player.DailyLuck;
-            Util.IslandRained = Util.isRainHere(GameLocation.LocationContext.Island);
-            Util.MainlandRained = Util.isRainHere(GameLocation.LocationContext.Default);
+            Util.IslandRained = Util.isRainHere(LocationContexts.IslandId);
+            Util.MainlandRained = Util.isRainHere(LocationContexts.DefaultId);
         }
 
         // 星露谷，启动！

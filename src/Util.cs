@@ -62,7 +62,7 @@ namespace MyAgenda
             return (trigger[1] == 1) ? (byte)0xFF : (byte)0xF0;
         }
 
-        public static bool isWeatherRain(int weather)
+        public static bool isWeatherRain(string weather)
         {
             // 康康这个是不是下雨天
             return weather == Game1.weather_rain || weather == Game1.weather_snow || weather == Game1.weather_lightning;
@@ -76,17 +76,17 @@ namespace MyAgenda
             var tomorrowWeather = Game1.IsMasterGame
                 ? Game1.weatherForTomorrow
                 : Game1.netWorldState.Value.WeatherForTomorrow;
-            int weather =  Game1.getWeatherModificationsForDate(date, tomorrowWeather);
+            string weather = Game1.getWeatherModificationsForDate(date, tomorrowWeather);
             return isWeatherRain(weather);
         }
 
         public static bool isIslandRainTomorrow()
         {
             // 从 UIInfoSuite2 抄过来的不知道啥意思
-            return isWeatherRain(Game1.netWorldState.Value.GetWeatherForLocation(GameLocation.LocationContext.Island).weatherForTomorrow.Value);
+            return isWeatherRain(Game1.netWorldState.Value.GetWeatherForLocation(LocationContexts.IslandId).weatherForTomorrow.Value);
         }
 
-        public static bool isRainHere(GameLocation.LocationContext context)
+        public static bool isRainHere(string context)
         {
             //当前这里是否下雨
             //Trigger.monitor.Log($"context: {context}", LogLevel.Info);
@@ -125,10 +125,10 @@ namespace MyAgenda
 
                 // 当天，查看当日数据
                 case 2:
-                    if (trigger[2] == 8) return isRainHere(GameLocation.LocationContext.Default) ? examinHelper(trigger) : (byte)6;
-                    if (trigger[2] == 9) return isRainHere(GameLocation.LocationContext.Island) ? examinHelper(trigger) : (byte)7;
-                    if (trigger[2] == 10) return isRainHere(GameLocation.LocationContext.Default) ? (byte)8 : examinHelper(trigger);
-                    if (trigger[2] == 11) return isRainHere(GameLocation.LocationContext.Island) ? (byte)9 : examinHelper(trigger);
+                    if (trigger[2] == 8) return isRainHere(LocationContexts.DefaultId) ? examinHelper(trigger) : (byte)6;
+                    if (trigger[2] == 9) return isRainHere(LocationContexts.IslandId) ? examinHelper(trigger) : (byte)7;
+                    if (trigger[2] == 10) return isRainHere(LocationContexts.DefaultId) ? (byte)8 : examinHelper(trigger);
+                    if (trigger[2] == 11) return isRainHere(LocationContexts.IslandId) ? (byte)9 : examinHelper(trigger);
                     if (trigger[2] == 12 && Game1.player.DailyLuck > 0.02) return examinHelper(trigger);
                     if (trigger[2] == 13 && Game1.player.DailyLuck < -0.02) return examinHelper(trigger);
                     break;
