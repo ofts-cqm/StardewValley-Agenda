@@ -26,7 +26,23 @@ If you found any bugs, please post it.
 
 * Holidays (include night market) and Birthdays are on the Agenda by default. Marriages are currently not but will come soon. 
 
-* You can edit the agenda by clicking the cell, and a new menu will pop up. You can edit the title and the note by clicking the line/box. You cannot edit the birthdays and Festivals since they are default. If the text overflows it will be cut off but it will still be recorded. 
+* You can edit the agenda by clicking the cell, and a new menu will pop up. You can edit the title and the note by clicking the line/box. You cannot edit the birthdays and Festivals since they are default. If the text overflows it will be cut off but it will still be recorded.
+
+### Trigger: 
+- You can choose the condition, time, and count. 
+- Once your condition is met, it will be "triggered", with a special pop-up notification
+- Common condition include Monday - Sunday, rainy days (both island and mainland) and sunny days, lucky days and unlucky days
+- Time can be "before", "on", or  "after"
+- count can be "next one" to "next ten", or "every"
+- An example of trigger can be found in the image page. 
+- You have 14 triggers (meaning you can at most set 14 triggers)
+- The trigger page can be found after the Winter page. 
+
+- After open the trigger editing page, you can found the current trigger on the third line. Just click what you want to change to edit. 
+
+- There will be a notification if your current trigger is invalid
+
+- Don't worry, trigger won't involve any kind of programming. You just choose the time, count, and condition that best fit your need. 
 
 * The content is always auto saved so you don't need to worry about losing your progress. (but the main save is updated once a day)
 
@@ -91,6 +107,22 @@ Note: English Version is Above
 * 节日（包括夜市）和生日会自动显示在待议事件簿上，婚姻暂时不能但即将来袭
 
 * 您可以通过点击格子来编辑待议事件，点击之后一个新的菜单将弹出。您可以点击标题和下面的框来编辑标题和记录。您不能更改节日和生日。如果一个文本溢出了它将被截断，但仍能被正确记录
+
+### 扳机：
+- 你可以选择条件，次数，和时间
+- 当条件满足时，扳机会被触发，并伴随着一个特殊的弹窗提示
+- 条件可以使周一到周日，雨天和晴天（包括大陆和姜岛），好运天和霉运天
+- 时间可以是前一天，当天，和后一天
+- 次数可以是下一次到下10次，或者每次 
+- 你有14个扳机（也就是说你最多同时设置14个扳机）
+- 一个扳机的例子可以再照片中找到
+- 扳机页面可以再冬天页面后面找到
+
+- 在打开扳机编辑菜单后，在第三行可以找到当前扳机。只需要点击你想设置的就行。
+
+- 如果当前扳机无效，会有一个提醒
+
+- 不用担心，扳机不涉及任何编程。你只需要选择最符合你需求的条件，时间，和次数。
 
 * 所有内容都是自动保存的，您不用担心丢失进度（但是总存档仍然是每天一次）
 
