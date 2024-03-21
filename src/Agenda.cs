@@ -6,6 +6,12 @@ using StardewValley.Menus;
 using StardewValley;
 using StardewModdingAPI;
 using StardewValley.Monsters;
+using StardewValley.Network;
+using StardewValley.TokenizableStrings;
+using static StardewValley.Menus.Billboard;
+using System.Linq;
+using StardewValley.GameData.Characters;
+using System.Reflection;
 
 namespace MyAgenda
 {
@@ -138,40 +144,193 @@ namespace MyAgenda
             {
                 triggerValueBounds[i] = new Rectangle(xPositionOnScreen + (i) % 7 * 40 * 4 + 75, yPositionOnScreen + 220 + 50 * 4 + (i) / 7 * 80 * 4, 38 * 4, 28 * 4);
             }
-            foreach (NPC allCharacter in Utility.getAllCharacters())
+            
+            foreach (Season season in Enum.GetValues<Season>())
             {
-                if (allCharacter.IsVillager && allCharacter.Birthday_Season != null && (Game1.player.friendshipData.ContainsKey(allCharacter.Name) || (!allCharacter.Name.Equals("Dwarf") && !allCharacter.Name.Equals("Sandy") && !allCharacter.Name.Equals("Krobus"))))
+                Dictionary<int, List<NPC>> birthdays = GetBirthdays(season);
+                foreach (KeyValuePair<int, List<NPC>> p in birthdays)
                 {
-                    try
+                    pageBirthday[Utility.getSeasonNumber(Utility.getSeasonKey(season)), p.Key - 1] = p.Value[0].displayName;
+                    string str = "";
+                    foreach (NPC npc in p.Value)
                     {
-                        pageBirthday[Utility.getSeasonNumber(allCharacter.Birthday_Season), allCharacter.Birthday_Day - 1] = allCharacter.displayName;
-                        titleSubsitute[Utility.getSeasonNumber(allCharacter.Birthday_Season), allCharacter.Birthday_Day - 1] += helper.Translation.Get("birthday_title", new { character = allCharacter.displayName });
-
+                        str += npc.displayName + ", ";
                     }
-                    catch (Exception) { }
+                    str = str.Substring(0, str.Length - 2);
+                    titleSubsitute[Utility.getSeasonNumber(Utility.getSeasonKey(season)), p.Key - 1] += helper.Translation.Get("birthday_title", new { character = str });
                 }
+                for (int day = 1; day <= 28; day++)
+                {
+                    List<BillboardEvent> events = GetEventsForDay(day, season);
+                    foreach (BillboardEvent e in events)
+                    {
+                        pageFestival[Utility.getSeasonNumber(Utility.getSeasonKey(season)), day - 1] = e.DisplayName;
+                        titleSubsitute[Utility.getSeasonNumber(Utility.getSeasonKey(season)), day - 1] += e.DisplayName; 
+                    }
+                }  
             }
-            var festivals = Game1.temporaryContent.Load<Dictionary<string, string>>("Data\\Festivals\\FestivalDates");
-
-            foreach (KeyValuePair<string, string> p in festivals)
-            {
-                int[] date = getDate(p.Key);
-                pageFestival[date[0], date[1]] = p.Value;
-                titleSubsitute[date[0], date[1]] += p.Value;
-            }
-
-            pageFestival[3, 14] += helper.Translation.Get("nightMarket");
-            pageFestival[3, 15] += helper.Translation.Get("nightMarket");
-            pageFestival[3, 16] += helper.Translation.Get("nightMarket");
-            titleSubsitute[3, 14] += helper.Translation.Get("nightMarket");
-            titleSubsitute[3, 15] += helper.Translation.Get("nightMarket");
-            titleSubsitute[3, 16] += helper.Translation.Get("nightMarket");
 
             if (Game1.options.SnappyMenus)
             {
                 populateClickableComponentList();
                 snapToDefaultClickableComponent();
             }
+        }
+
+        public virtual Dictionary<int, List<NPC>> GetBirthdays(Season season)
+        {
+            HashSet<string> addedBirthdays = new HashSet<string>();
+            Dictionary<int, List<NPC>> birthdays = new Dictionary<int, List<NPC>>();
+            Utility.ForEachVillager(delegate (NPC npc)
+            {
+                if (npc.Birthday_Season != Utility.getSeasonKey(season))
+                {
+                    return true;
+                }
+
+                CalendarBehavior? calendarBehavior = npc.GetData()?.Calendar;
+                if (calendarBehavior == CalendarBehavior.HiddenAlways || (calendarBehavior == CalendarBehavior.HiddenUntilMet && !Game1.player.friendshipData.ContainsKey(npc.Name)))
+                {
+                    return true;
+                }
+
+                if (addedBirthdays.Contains(npc.Name))
+                {
+                    return true;
+                }
+
+                if (!birthdays.TryGetValue(npc.Birthday_Day, out var value))
+                {
+                    value = (birthdays[npc.Birthday_Day] = new List<NPC>());
+                }
+
+                value.Add(npc);
+                addedBirthdays.Add(npc.Name);
+                return true;
+            });
+            return birthdays;
+        }
+
+        public virtual List<BillboardEvent> GetEventsForDay(int day, Season season)
+        {
+            List<BillboardEvent> list = new List<BillboardEvent>();
+            if (Utility.isFestivalDay(day, season))
+            {
+                string text = Utility.getSeasonKey(season) + day;
+                string displayName = Game1.temporaryContent.Load<Dictionary<string, string>>("Data\\Festivals\\" + text)["name"];
+                list.Add(new BillboardEvent(BillboardEventType.Festival, new string[1] { text }, displayName));
+            }
+
+            if (Utility.TryGetPassiveFestivalDataForDay(day, season, null, out var id, out var data, ignoreConditionsCheck: true) && (data?.ShowOnCalendar ?? false))
+            {
+                string displayName2 = TokenParser.ParseText(data.DisplayName);
+                if (!GameStateQuery.CheckConditions(data.Condition))
+                {
+                    list.Add(new BillboardEvent(BillboardEventType.PassiveFestival, new string[1] { id }, "???")
+                    {
+                        locked = true
+                    });
+                }
+                else
+                {
+                    list.Add(new BillboardEvent(BillboardEventType.PassiveFestival, new string[1] { id }, displayName2));
+                }
+            }
+
+            if (season == Season.Summer && (day == 20 || day == 21))
+            {
+                string displayName3 = Game1.content.LoadString("Strings\\1_6_Strings:TroutDerby");
+                list.Add(new BillboardEvent(BillboardEventType.FishingDerby, Array.Empty<string>(), displayName3));
+            }
+            else if (season == Season.Winter && (day == 12 || day == 13))
+            {
+                string displayName4 = Game1.content.LoadString("Strings\\1_6_Strings:SquidFest");
+                list.Add(new BillboardEvent(BillboardEventType.FishingDerby, Array.Empty<string>(), displayName4));
+            }
+
+            if (getDaysOfBooksellerThisSeason(Utility.getSeasonNumber(Utility.getSeasonKey(season))).Contains(day))
+            {
+                string displayName5 = Game1.content.LoadString("Strings\\1_6_Strings:Bookseller");
+                list.Add(new BillboardEvent(BillboardEventType.Bookseller, Array.Empty<string>(), displayName5));
+            }
+
+            HashSet<Farmer> hashSet = new HashSet<Farmer>();
+            FarmerCollection onlineFarmers = Game1.getOnlineFarmers();
+            foreach (Farmer item2 in onlineFarmers)
+            {
+                if (hashSet.Contains(item2) || !item2.isEngaged() || item2.hasCurrentOrPendingRoommate())
+                {
+                    continue;
+                }
+
+                string text2 = null;
+                WorldDate worldDate = null;
+                NPC characterFromName = Game1.getCharacterFromName(item2.spouse);
+                if (characterFromName != null)
+                {
+                    worldDate = item2.friendshipData[item2.spouse].WeddingDate;
+                    text2 = characterFromName.displayName;
+                }
+                else
+                {
+                    long? spouse = item2.team.GetSpouse(item2.UniqueMultiplayerID);
+                    if (spouse.HasValue)
+                    {
+                        Farmer farmerMaybeOffline = Game1.getFarmerMaybeOffline(spouse.Value);
+                        if (farmerMaybeOffline != null && onlineFarmers.Contains(farmerMaybeOffline))
+                        {
+                            worldDate = item2.team.GetFriendship(item2.UniqueMultiplayerID, spouse.Value).WeddingDate;
+                            hashSet.Add(farmerMaybeOffline);
+                            text2 = farmerMaybeOffline.Name;
+                        }
+                    }
+                }
+
+                if (!(worldDate == null))
+                {
+                    if (worldDate.TotalDays < Game1.Date.TotalDays)
+                    {
+                        worldDate = new WorldDate(Game1.Date);
+                        worldDate.TotalDays++;
+                    }
+
+                    if (worldDate?.TotalDays >= Game1.Date.TotalDays && day == worldDate.DayOfMonth)
+                    {
+                        list.Add(new BillboardEvent(BillboardEventType.Wedding, new string[2] { item2.Name, text2 }, Game1.content.LoadString("Strings\\UI:Calendar_Wedding", item2.Name, text2)));
+                        hashSet.Add(item2);
+                    }
+                }
+            }
+
+            return list;
+        }
+
+        // copied and moldified from Utility.getDayOfBooksellerThisSeason::List<int>
+        public static List<int> getDaysOfBooksellerThisSeason(int season)
+        {
+            Random random = Utility.CreateRandom(Game1.year * 11, Game1.uniqueIDForThisGame, season);
+            int[] array = null;
+            List<int> list = new List<int>();
+            switch (season)
+            {
+                case 0:
+                    array = new int[5] { 11, 12, 21, 22, 25 };
+                    break;
+                case 1:
+                    array = new int[5] { 9, 12, 18, 25, 27 };
+                    break;
+                case 2:
+                    array = new int[8] { 4, 7, 8, 9, 12, 19, 22, 25 };
+                    break;
+                case 3:
+                    array = new int[6] { 5, 11, 12, 19, 22, 24 };
+                    break;
+            }
+
+            int num = random.Next(array.Length);
+            list.Add(array[num]);
+            list.Add(array[(num + array.Length / 2) % array.Length]);
+            return list;
         }
 
         public static int[] getDate(String date)

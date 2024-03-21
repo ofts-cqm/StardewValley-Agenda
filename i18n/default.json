@@ -1,5 +1,5 @@
 {
-	"pop_up" : "You have One Upcomming Item Today!",
+	"pop_up" : "You have One Upcoming Item Today!",
 	"triggered" : "A special task is triggered!",
 	"birthday_title" : "{{character}}'s Birthday!",
 	"birthday_page" : "Birthday: ",
@@ -7,7 +7,6 @@
 	"subsitute" : "Click to Add a Title!",
 	"subsitute_note" : "Click to Add a Note!",
 	"none" : "none",
-	"nightMarket" : "night market",
 	"keyBind" : "Open Agenda",
 	"keyBind_tip" : "The key to open Agenda",
 	"replace" : "Replace Vanilla Calendar",

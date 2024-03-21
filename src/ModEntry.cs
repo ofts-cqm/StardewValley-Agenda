@@ -6,6 +6,7 @@ using StardewValley;
 using StardewValley.Menus;
 using GenericModConfigMenu;
 using System;
+using StardewValley.GameData.Machines;
 
 namespace MyAgenda
 {
@@ -14,6 +15,7 @@ namespace MyAgenda
         ModConfig Config;
         //NamingMenu n;
         //DialogueBox b;
+        //Billboard b;
 
         public override void Entry(IModHelper helper)
         {
